@@ -53,11 +53,11 @@
         <div class="gamePage">
             <div class="gamePlayers">
                 <div class="player">
-                    <span class="playerName">Artem: </span>
+                    <span class="playerName"></span>
                     <span class="playerSide">x</span>
                 </div>
                 <div class="opponent">
-                    <span class="opponentName">Dron: </span>
+                    <span class="opponentName">Computer: </span>
                     <span class="opponentSide">o</span>
                 </div>
             </div>
@@ -76,5 +76,31 @@
         </div>
     </div>
 </body>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const name = document.querySelector(".inputName");
+    const startGame = document.querySelector(".startGame");
+    const startPage = document.querySelector(".startPage");
+    const gamePage = document.querySelector(".gamePage");
+    const playerName = document.querySelector(".playerName");
+    
+
+    startGame.addEventListener('click', startClickFunction);
+
+
+    function startClickFunction() {
+        usrName = name.value;
+        if (usrName != "") {
+            startPage.style.display = "none";
+            gamePage.style.display = "block";
+            playerName.textContent = usrName + ":"
+        }
+    }
+
+
+
+</script>
+
 
 </html>
