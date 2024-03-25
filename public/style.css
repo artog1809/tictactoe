@@ -1,0 +1,17 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.board {
+    width: 610px;
+    height: 610px;
+}
+
+.cell {
+    width: 200px;
+    height: 200px;
+    border: 1px solid black;
+    float: left;
+}
