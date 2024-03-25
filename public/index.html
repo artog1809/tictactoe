@@ -10,25 +10,20 @@
 
 <body>
     <h1>Tic Tac Toe</h1>
-    <div class="board">
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
-        <div class="cell"></div>
+    <div>
+        <p id = "userCont">Вы: <span id ="user"></span></p>
+        <p id = "oppCont">Соперник: <span id ="oppName"></span></p>
     </div>
-    <p id="message"></p>
-    <button id="restartButton">Restart Game</button>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
+    <p id = "valueCont">Вы играете <span id = "value"></span></p>
+    <p id = "turn">Сейчас ходит X</p>
 
-       
-    </script>
+    <div>
+        <p id = "enterName">Введите ваше имя </p>
+        <input type = "text" placeholder="Имя" id="name" autocomplete="off">
+    </div>
+    <button id = "find">Найти игрока</button>
+
 </body>
 
 </html>
