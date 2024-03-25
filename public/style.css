@@ -1,17 +1,52 @@
 body {
+    background: linear-gradient(#bbb, transparent 1px), linear-gradient(90deg, #bbb, transparent 1px);
+    background-size: 15px 15px;
+    background-position: center center;
+    font-size: 32px;
+}
+
+.container {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.board {
-    width: 610px;
-    height: 610px;
+.startPage {
+    display: flex;
+    flex-direction: column;
+    height: 300px;
+    justify-content: space-around;
+    font-size: 20px;
+    display: none;
+}
+
+.gameSettings {
+    display: flex;
+}
+
+.playerInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.gamePlayers{
+    display: flex;
+    justify-content: space-between;
+}
+
+.gameField {
+    width: 330px;
+    height: 330px;
+    grid-template-columns: 1fr 1fr 1fr;
+    display: grid;
+    border: 5px solid black;
 }
 
 .cell {
-    width: 200px;
-    height: 200px;
-    border: 1px solid black;
-    float: left;
+    height: 100px;
+    width: 100px;
+    border: 5px solid black;
+    cursor: pointer;
 }
