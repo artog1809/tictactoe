@@ -10,3 +10,12 @@ const io = socketIO(server);
 
 // Папка со статическими файлами (HTML, CSS, JS)
 app.use(express.static(__dirname + "/public"));
+
+
+app.get("/", (req, res) => {
+    return res.sendFile("index.html");
+});
+
+server.listen(3000, _ => {
+    console.log("server started at 3000 port");
+});
