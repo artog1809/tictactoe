@@ -13,52 +13,28 @@
         <h1>Крестики-нолики</h1>
         <div class="startPage">
             <div class="gameSettings">
-                <fieldset class="type">
-                    <legend>Выберите режим игры:</legend>
-
-                    <div>
-                        <input type="radio" id="comp" name="type" value="comp" checked />
-                        <label for="comp">Компьютер</label>
-                    </div>
-
-                    <div>
-                        <input type="radio" id="online" name="type" value="online" />
-                        <label for="online">По сети</label>
-                    </div>
-                </fieldset>
-
-                <fieldset class="size">
-                    <legend>Выберите размер поля:</legend>
-
-                    <div>
-                        <input type="radio" id="little" name="size" value="little" checked />
-                        <label for="little">3x3</label>
-                    </div>
-
-                    <div>
-                        <input type="radio" id="big" name="size" value="big" />
-                        <label for="big">5x5</label>
-                    </div>
-                </fieldset>
+                <div class="playerInfo">
+                    <label for="playerName">Введите имя: </label>
+                    <input type="text" id="playerName">
+                </div>
+                <div class="playerInfo">
+                    <label for="roomName">Введите имя комнаты: </label>
+                    <input type="text" id="roomName">
+                    <button class="createRoom">Создать комнату</button>
+                    <button class="joinRoom">Присоединиться к комнате</button>
+                </div>
             </div>
-
-            <div class="playerInfo">
-                <label for="usrName">Введите имя: </label>
-                <input type="text" class="inputName">
-                <button class="startGame">Начать игру</button>
-            </div>
-
         </div>
 
-        <div class="gamePage">
+        <div class="gamePage" style="display: none;">
             <div class="gamePlayers">
                 <div class="player">
                     <span class="playerName"></span>
-                    <span class="playerSide">x</span>
+                    <span class="playerSide"></span>
                 </div>
                 <div class="opponent">
-                    <span class="opponentName">Computer: </span>
-                    <span class="opponentSide">o</span>
+                    <span class="opponentName"></span>
+                    <span class="opponentSide"></span>
                 </div>
             </div>
 
@@ -73,34 +49,93 @@
                 <div class="cell"></div>
                 <div class="cell"></div>
             </div>
+
+            <div class="gameMessage"></div>
+            <button class="restart">Начать заново</button>
         </div>
     </div>
-</body>
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    const name = document.querySelector(".inputName");
-    const startGame = document.querySelector(".startGame");
-    const startPage = document.querySelector(".startPage");
-    const gamePage = document.querySelector(".gamePage");
-    const playerName = document.querySelector(".playerName");
-    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const playerNameInput = document.getElementById("playerName");
+        const roomNameInput = document.getElementById("roomName");
+        const createRoomBtn = document.querySelector(".createRoom");
+        const joinRoomBtn = document.querySelector(".joinRoom");
+        const startPage = document.querySelector(".startPage");
+        const gamePage = document.querySelector(".gamePage");
+        const playerNameDisplay = document.querySelector(".playerName");
+        const playerSideDisplay = document.querySelector(".playerSide");
+        const opponentNameDisplay = document.querySelector(".opponentName");
+        const opponentSideDisplay = document.querySelector(".opponentSide");
+        const cells = document.querySelectorAll(".cell");
+        const message = document.querySelector(".gameMessage");
+        const restartBtn = document.querySelector(".restart");
 
-    startGame.addEventListener('click', startClickFunction);
+        createRoomBtn.addEventListener('click', () => {
+            const playerName = playerNameInput.value.trim();
+            const roomName = roomNameInput.value.trim();
+            if (playerName !== "" && roomName !== "") {
+                socket.emit('createRoom', { playerName, roomName });
+            }
+        });
 
+        joinRoomBtn.addEventListener('click', () => {
+            const playerName = playerNameInput.value.trim();
+            const roomName = roomNameInput.value.trim();
+            if (playerName !== "" && roomName !== "") {
+                socket.emit('joinRoom', { playerName, roomName });
+            }
+        });
 
-    function startClickFunction() {
-        usrName = name.value;
-        if (usrName != "") {
+        cells.forEach((cell, index) => {
+            cell.addEventListener('click', () => {
+                socket.emit('move', { roomName: roomNameInput.value.trim(), index });
+            });
+        });
+
+        restartBtn.addEventListener('click', () => {
+            socket.emit('restart', roomNameInput.value.trim());
+        });
+
+        socket.on('roomCreated', (data) => {
+            playerNameDisplay.textContent = data.playerName;
+            playerSideDisplay.textContent = 'X';
+            roomNameInput.value = data.roomName;
             startPage.style.display = "none";
             gamePage.style.display = "block";
-            playerName.textContent = usrName + ":"
-        }
-    }
+        });
 
+        socket.on('gameStart', (room) => {
+            playerNameDisplay.textContent = room.players.find(player => player.id === socket.id).name;
+            playerSideDisplay.textContent = room.players.find(player => player.id === socket.id).symbol;
+            opponentNameDisplay.textContent = room.players.find(player => player.id !== socket.id).name;
+            opponentSideDisplay.textContent = room.players.find(player => player.id !== socket.id).symbol;
+            startPage.style.display = "none";
+            gamePage.style.display = "block";
+        });
 
+        socket.on('gameState', (gameState) => {
+            gameState.board.forEach((value, index) => {
+                cells[index].textContent = value;
+            });
 
-</script>
+            if (gameState.winner) {
+                message.textContent = `Player ${gameState.winner} wins!`;
+            } else {
+                message.textContent = `Current player: ${gameState.currentPlayer}`;
+            }
+        });
 
+        socket.on('roomError', (data) => {
+            alert(data.message);
+        });
+
+        socket.on('playerLeft', (playerName) => {
+            alert(`Игрок ${playerName} покинул игру.`);
+            window.location.reload(); // Обновляем страницу при отключении другого игрока
+        });
+    </script>
+</body>
 
 </html>
