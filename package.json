@@ -4,16 +4,11 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon app.js"
+    "start": "nodemon app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.1",
-    "nodemon": "^3.1.0",
-    "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5"
+    "nodemon": "^3.1.0"
   }
 }

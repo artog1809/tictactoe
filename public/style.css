@@ -12,15 +12,17 @@ body {
 }
 
 .startPage {
-    display: flex;
     flex-direction: column;
     height: 300px;
     justify-content: space-around;
     font-size: 20px;
+    display: none;
+
 }
 
 .gamePage {
-    display: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .gameSettings {
@@ -58,3 +60,17 @@ body {
     vertical-align: center;
 }
 
+.createNewRoom {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.list {
+    padding-top: 50px;
+}
+
+.room {
+    border: 1px solid black;
+    cursor: pointer;
+}
