@@ -150,6 +150,33 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
+    if(url === "/gameOver" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => {
+            body += chunk.toString();
+        })
+
+        req.on("end", _ => {
+            try {
+                const room = JSON.parse(body);
+                const roomName = room.roomName;
+                delete roomStates[roomName];
+                for(let i = 0; i < rooms.length; i++) {
+                    if(rooms[i].roomName === roomName) {
+                        rooms.splice(i,1);
+                        break;
+                    }
+                }
+                res.writeHead(302, {'location':'/roomList.html'})
+                res.end();
+                return;
+            } catch (error) {
+                res.writeHead(400);
+                res.end("invalid data")
+            }
+        })
+        return;
+    }
     if(url === "/getPlayers" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -200,7 +227,13 @@ const server = http.createServer((req, res) => {
                     return;
                 }
                 res.writeHead(200);
-                res.end(JSON.stringify({cells: roomStates[roomName].cells, currentPlayer: roomStates[roomName].currentPlayer}))
+                if(roomStates[roomName].winner) {
+                    console.log(roomStates[roomName].winner)
+                }
+                res.end(JSON.stringify({cells: roomStates[roomName].cells, 
+                                        currentPlayer: roomStates[roomName].currentPlayer, 
+                                        winner: roomStates[roomName].winner,
+                                        draw: roomStates[roomName].draw}));
                 return;
 
             } catch (error) {
@@ -252,8 +285,8 @@ const server = http.createServer((req, res) => {
                         users.forEach(user => {
                             clients.push(user.client)
                         })
+                        roomStates[roomName].winner = currentState.currentPlayer
                         const clientsData = clients.map(client => {
-                            console.log(client)
                             return {success: true, winner: currentState.currentPlayer};
                         })
                         res.end(JSON.stringify(clientsData));
@@ -271,6 +304,7 @@ const server = http.createServer((req, res) => {
                     users.forEach(user => {
                         clients.push(user.client)
                     })
+                    roomStates[roomName].draw = true
                     const clientsData = clients.map(client => {
                         return {success: true, draw: true};
                     })
@@ -293,7 +327,7 @@ const server = http.createServer((req, res) => {
                 const clientsData = clients.map(client => {
                     return {success: true, cells: currentState.cells, currentPlayer: currentState.currentPlayer};
                 })
-
+                
                 res.end(JSON.stringify(clientsData));
                 return;               
             } catch (error) {

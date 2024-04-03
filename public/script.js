@@ -4,8 +4,6 @@ const roomName = urlParams.get('roomName');
 
 document.addEventListener('DOMContentLoaded', getPlayers);
 document.addEventListener('DOMContentLoaded', checkChanges);
-// document.addEventListener('DOMContentLoaded', pollServer);
-// document.addEventListener('DOMContentLoaded', subscribe);
 
 const title = document.querySelector('.roomName');
 const cells = document.querySelectorAll('.cell');
@@ -16,12 +14,15 @@ const plSide = document.querySelector('.playerSide');
 const opp = document.querySelector('.opponentName');
 const oppSide = document.querySelector('.opponentSide');
 const movePl = document.querySelector('.move')
+const gameMessage = document.querySelector('.gameMessage')
 
 title.textContent = `Игровая комната ${roomName}`;
 
 let currentPlayer = 'X';
 let namePlayer;
 
+
+// Повесить на каждую клетку поля обработчик клика
 for (let i = 0; i < cells.length; i++) {
     cells[i].addEventListener('click', _ => {
         if (!cells[i].textContent) {
@@ -30,14 +31,11 @@ for (let i = 0; i < cells.length; i++) {
     });
 }
 
-// Добавляем переменную для хранения статуса текущего хода
+// Переменная для определения доступности хода игрока
 let canMove = true;
 
-// Изменяем логику отправки хода
 function move(index) {
-    // debugger
     if (!canMove) return; // Проверяем, можем ли мы делать ход
-    // debugger;
     fetch("/move", {
         method: "POST",
         headers: {
@@ -47,20 +45,18 @@ function move(index) {
     })
     .then(response => response.json())
     .then(data => {
-        // debugger
         if (data[0].success) {
             if (data[0].winner) {
                 if(data[0].winner)
-                alert(`${data[0].winner} wins!`);
-                resetBoard();
+                movePl.textContent = `Выиграл ${data[0].winner}`
+                setTimeout(gameOver, 5000);
             }
             if (data[0].draw) {
-                alert("It's a draw")
-                resetBoard();
+                movePl.textContent = 'Ничья'
+                setTimeout(gameOver, 5000);
             }
             if (!data[0].winner && !data[0].draw) {
                 // Обновляем текущего игрока только после успешного хода
-                // console.log(data)
                 currentPlayer = data[0].currentPlayer;
                 
                 canMove = currentPlayer === plSide.textContent; // Проверяем, можем ли мы делать ход
@@ -75,7 +71,6 @@ function move(index) {
 }
 
 function checkChanges() {
-    // debugger
     fetch ("/check", {
         method: "POST",
         headers: {
@@ -85,16 +80,20 @@ function checkChanges() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(currentPlayer)
-        // console.log(Object.keys(data).length)
-        if(Object.keys(data).length > 1) updateBoard(data.cells);
-        // console.log(plSide.textContent)
-        if(data.currentPlayer != plSide.textContent){
-            // console.log("ожидание хода соперника")
-            setTimeout(checkChanges(), 10000)
+        // console.log(data)
+        if(data.winner !== undefined) {
+            movePl.textContent = `Выиграл ${data.winner}`
+            setTimeout(gameOver, 5000);
+            return;
         }
-        if(data.currentPlayer == plSide.textContent){
-            console.log("ваш ход")
+        if(data.draw !== undefined) {
+            movePl.textContent = `Ничья`
+            setTimeout(gameOver, 5000);
+            return;
+        }
+        if(Object.keys(data).length > 1) updateBoard(data.cells);
+        if(data.currentPlayer != plSide.textContent){
+            setTimeout(checkChanges(), 10000)
         }
         currentPlayer = data.currentPlayer;
         if(currentPlayer === plSide.textContent) {
@@ -105,7 +104,6 @@ function checkChanges() {
         }
         canMove = currentPlayer === plSide.textContent;
     })
-    // setTimeout(checkChanges(), 10000)
 }
 
 function updateBoard(newCells) {
@@ -132,9 +130,6 @@ function getPlayers() {
     })
     .then(response => response.json())
     .then(data => {
-        // console.log(data.owner);
-        // console.log(data.players);
-        // debugger
         if(data.players.length === 1) {
             namePlayer = data.owner.name;
             pl.textContent = namePlayer;
@@ -157,6 +152,23 @@ function getPlayers() {
             }
         }
         
+    })
+}
+
+function gameOver() {
+    fetch("/gameOver", {
+        method: "POST",
+        headers: {
+            "Content-Type":"applicaton/json"
+        },
+        body: JSON.stringify({roomName: roomName})
+    })
+    .then(response => {
+        if(response.ok) {
+            window.location.href = "/roomList.html";
+        } else {
+            console.error("Ошибка при отправке данных на сервер");
+        }
     })
 }
 
