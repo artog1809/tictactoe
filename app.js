@@ -69,14 +69,11 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
-
     if(url === "/ident" && req.method === "POST") {
         let body = "";
-        // console.log(rooms)
         req.on("data", chunk => {
             body += chunk.toString();
         });
-    
         req.on("end", _ => {
             try {
                 let player = JSON.parse(body);
@@ -92,7 +89,6 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
-
     if(url === "/createRoom" && req.method === "POST") {
         let body = "";
     
@@ -140,9 +136,7 @@ const server = http.createServer((req, res) => {
                         break;
                     }
                 }
-                //console.log(room) room.player.name
                 checkRoomAvailable(room)
-                // console.log(rooms[0].players)
                 const roomName = room.roomName;
                 const params = {roomName : roomName};
                 const redirectUrl = `/room.html?${new URLSearchParams(params).toString()}`
@@ -168,8 +162,6 @@ const server = http.createServer((req, res) => {
                 const roomName = room.roomName;
                 let players;
                 let playersTotal = [];
-                // console.log(rooms)
-                // console.log(rooms[0].players)
                 rooms.forEach(room => {
                     if(room.roomName === roomName) {
                         players = room.players;
@@ -184,8 +176,6 @@ const server = http.createServer((req, res) => {
                     }
                 }
                 let owner = playersTotal[0];
-                // console.log(owner)
-                // console.log(playersTotal);
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({owner: owner, players: playersTotal}));
                 return;
@@ -201,7 +191,6 @@ const server = http.createServer((req, res) => {
         req.on("data", chunk => {
             body += chunk.toString();
         })
-
         req.on("end", _ => {
             try {
                 const roomName = JSON.parse(body).roomName;
@@ -227,7 +216,6 @@ const server = http.createServer((req, res) => {
         req.on("data", chunk => {
             body += chunk.toString();
         })
-
         req.on("end", _ => {
             try {
                 const {index, player} = JSON.parse(body);
@@ -250,11 +238,8 @@ const server = http.createServer((req, res) => {
                                     [0, 3, 6], [1, 4, 7], [2, 5, 8], 
                                     [0, 4, 8], [2, 4, 6] 
                 ]; 
-                // console.log(roomStates[roomName])
                 currentState.cells[index] = player.side;
                 currentPlayer = player.side;
-                // console.log(roomStates[roomName])
-                // console.log(users)
                 for (const combo of winningCombinations) {
                     const [a, b, c] = combo;
                     if (
@@ -266,7 +251,6 @@ const server = http.createServer((req, res) => {
                         const clients = []
                         users.forEach(user => {
                             clients.push(user.client)
-                            // console.log(user.name)
                         })
                         const clientsData = clients.map(client => {
                             console.log(client)
@@ -286,7 +270,6 @@ const server = http.createServer((req, res) => {
                     const clients = []
                     users.forEach(user => {
                         clients.push(user.client)
-                        // console.log(user.name)
                     })
                     const clientsData = clients.map(client => {
                         return {success: true, draw: true};
@@ -299,21 +282,18 @@ const server = http.createServer((req, res) => {
                     };
                     return;
                 }
-                // console.log(users)
                 // Переключаем текущего игрока
                 currentState.currentPlayer = currentState.currentPlayer === "X" ? "O" : "X";
                 // Оповещаем клиентов о ходе и обновляем состояние игры
                 const clients = []
                 users.forEach(user => {
                     clients.push(user.client)
-                    // console.log(user.name)
                 })
                 
                 const clientsData = clients.map(client => {
                     return {success: true, cells: currentState.cells, currentPlayer: currentState.currentPlayer};
                 })
 
-                // console.log(roomStates)
                 res.end(JSON.stringify(clientsData));
                 return;               
             } catch (error) {
@@ -328,7 +308,6 @@ const server = http.createServer((req, res) => {
         rooms.forEach(room => {
             roomNames.push(room.roomName)
         })
-        // console.log(rooms)
         // Проверяем, существует ли массив комнат
         if (roomNames.length < 1) {
             console.log("rooms is empty now")
