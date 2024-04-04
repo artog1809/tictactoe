@@ -78,8 +78,8 @@ function enterRoom(roomName) {
         },
         body: JSON.stringify({roomName: roomName, player: namePlayer})
     })
-    .then(response => {
-        if(response.ok) {
+    .then(response => { 
+        if(response.ok){
             window.location.href = `/room.html?roomName=${encodeURIComponent(roomName)}`;
             console.log(`you join room ${roomName}`)
         }

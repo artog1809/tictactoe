@@ -19,6 +19,7 @@ const gameMessage = document.querySelector('.gameMessage')
 title.textContent = `Игровая комната ${roomName}`;
 
 let currentPlayer = 'X';
+let winner;
 let namePlayer;
 
 
@@ -47,8 +48,9 @@ function move(index) {
     .then(data => {
         if (data[0].success) {
             if (data[0].winner) {
-                if(data[0].winner)
+                // debugger
                 movePl.textContent = `Выиграл ${data[0].winner}`
+                // checkChanges();
                 setTimeout(gameOver, 5000);
             }
             if (data[0].draw) {
@@ -80,13 +82,14 @@ function checkChanges() {
     })
     .then(response => response.json())
     .then(data => {
-        // console.log(data)
-        if(data.winner !== undefined) {
+        console.log(data)
+        // debugger
+        if(data.winner) {
             movePl.textContent = `Выиграл ${data.winner}`
             setTimeout(gameOver, 5000);
             return;
         }
-        if(data.draw !== undefined) {
+        if(data.draw) {
             movePl.textContent = `Ничья`
             setTimeout(gameOver, 5000);
             return;

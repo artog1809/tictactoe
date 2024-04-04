@@ -136,15 +136,18 @@ const server = http.createServer((req, res) => {
                         break;
                     }
                 }
-                checkRoomAvailable(room)
-                const roomName = room.roomName;
-                const params = {roomName : roomName};
-                const redirectUrl = `/room.html?${new URLSearchParams(params).toString()}`
-                res.writeHead(302, {'Location': redirectUrl});
-                res.end();
-                return;
+                // console.log(checkRoomAvailable(room))
+                if(checkRoomAvailable(room) === true) {
+                    const roomName = room.roomName;
+                    const params = {roomName : roomName};
+                    const redirectUrl = `/room.html?${new URLSearchParams(params).toString()}`
+                    res.writeHead(302, {'Location': redirectUrl});
+                    res.end();
+                    return;
+                }
+                
             } catch(error) {
-                res.writeHead(400);
+                res.writeHead();
                 res.end('invalid data');
             }
         });
@@ -222,25 +225,29 @@ const server = http.createServer((req, res) => {
             try {
                 const roomName = JSON.parse(body).roomName;
                 if(roomStates[roomName] === undefined) {
-                    res.writeHead(200);
-                    res.end(JSON.stringify({currentPlayer: 'X'}))
+                    res.end(JSON.stringify({currentPlayer : 'X'}))
                     return;
                 }
-                res.writeHead(200);
-                if(roomStates[roomName].winner) {
-                    console.log(roomStates[roomName].winner)
+                if (roomStates[roomName].winner) {
+                    res.end(JSON.stringify({cells: roomStates[roomName].cells, 
+                        currentPlayer: roomStates[roomName].currentPlayer, 
+                        winner: roomStates[roomName].winner}));
+                    return;
+                }
+                if (roomStates[roomName].draw) {
+                    res.end(JSON.stringify({cells: roomStates[roomName].cells, 
+                        currentPlayer: roomStates[roomName].currentPlayer, 
+                        draw: roomStates[roomName].draw}));
+                    return;
                 }
                 res.end(JSON.stringify({cells: roomStates[roomName].cells, 
-                                        currentPlayer: roomStates[roomName].currentPlayer, 
-                                        winner: roomStates[roomName].winner,
-                                        draw: roomStates[roomName].draw}));
+                                        currentPlayer: roomStates[roomName].currentPlayer}));
                 return;
 
             } catch (error) {
                 res.writeHead(400);
                 res.end(JSON.stringify({ success: false, message: "Invalid JSON" }));
             }
-            return;
         })
         return;
     }
@@ -290,11 +297,6 @@ const server = http.createServer((req, res) => {
                             return {success: true, winner: currentState.currentPlayer};
                         })
                         res.end(JSON.stringify(clientsData));
-                        // Очищаем состояние игры после победы
-                        roomStates[roomName] = {
-                            cells: new Array(9).fill(""),
-                            currentPlayer: "X"
-                        };
                         return;
                     }
                 }
@@ -309,11 +311,6 @@ const server = http.createServer((req, res) => {
                         return {success: true, draw: true};
                     })
                     res.end(JSON.stringify(clientsData));
-                    // Очищаем состояние игры после ничьи
-                    roomStates[roomName] = {
-                        cells: new Array(9).fill(""),
-                        currentPlayer: "X"
-                    };
                     return;
                 }
                 // Переключаем текущего игрока
@@ -328,6 +325,7 @@ const server = http.createServer((req, res) => {
                     return {success: true, cells: currentState.cells, currentPlayer: currentState.currentPlayer};
                 })
                 
+                // console.log(roomName)
                 res.end(JSON.stringify(clientsData));
                 return;               
             } catch (error) {
@@ -375,7 +373,6 @@ function createUser(name, res) {
         client: res
     })
     return {name: name, client: res}
-    // console.log(users)
 }
 
 function checkRoomAvailable(room2) {
@@ -383,15 +380,15 @@ function checkRoomAvailable(room2) {
 
     if(foundRoom[0].length == 0) {
         console.log("Room not found");
-        return;
+        return false;
     }
 
     if(foundRoom[0].players.length > 1) {
         console.log("Room is full");
-        return;
+        return false;
     }
-
+    
     foundRoom[0].players.push(room2.player);
     console.log(`${room2.player} join room ${room2.roomName}`)
-
+    return true;
 }
