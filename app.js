@@ -2,26 +2,27 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const cells = new Array(9).fill("");
-let canMove = false;
-let lastMoveIndex = null;
 let users = [];
-let clients = [];
 let rooms = [];
 let players = [];
-let currentPlayer;
 let roomStates = {};
 
 const server = http.createServer((req, res) => {
     let filePath;
+    // Отбросить параметры из адреснйо строки
     let url = req.url.split('?')[0]; 
     
     if (url === "/") {
+        //Домашняя страница
         filePath = path.join(__dirname, "public", "identification.html");
     }
     else {
+        // Остальные страницы
         filePath = path.join(__dirname, "public", req.url.slice(1)); // Удаляем начальный слэш
     }
+    // Узнать расширение файла
     const extname = path.extname(filePath);
+    // По умолчанию расширение html
     let contentType = "text/html";
     
     // Устанавливаем contentType в зависимости от расширения файла
@@ -42,26 +43,22 @@ const server = http.createServer((req, res) => {
             contentType = "image/jpg";
             break;
     }
+    // Обход ошибки 
     if (url === "/favicon.ico") {
         res.writeHead(204);
         res.end();
         return;
     }  
+    // Страница комнаты
     if (url === "/room.html") {
         filePath = path.join(__dirname, "public", "room.html");
         fs.readFile(filePath, (err, data) => {
-            if (err) {
-                console.error(err);
-                res.writeHead(500);
-                res.end("500 Internal Server Error");
-                
-            } else {
-                res.writeHead(200, { "Content-Type": "text/html" });
-                res.end(data);
-            }
+            res.writeHead(200, { "Content-Type": "text/html" });
+            res.end(data);
         });
         return;
-    }  
+    } 
+    // Получить список комнат
     if(req.method === "GET" && url !== "/getRooms") {
         fs.readFile(filePath, (err, data) => {
             res.writeHead(200, { "Content-Type": contentType });
@@ -69,6 +66,7 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
+    // Страница идентификации
     if(url === "/ident" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -78,7 +76,9 @@ const server = http.createServer((req, res) => {
             try {
                 let player = JSON.parse(body);
                 players.push(player);
+                // Создать игрока при удачной регистрации
                 createUser(player, res)
+                // Сделать редирект на страницу со списком комнат
                 res.writeHead(302, {'location':'/roomList.html'})
                 res.end();
                 return;
@@ -89,6 +89,7 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
+    // Создать комнату
     if(url === "/createRoom" && req.method === "POST") {
         let body = "";
     
@@ -99,15 +100,19 @@ const server = http.createServer((req, res) => {
         req.on("end", _ => {
             try {
                 let room = JSON.parse(body);
+                // Добавить игрока создавшего комнату в комнату
                 for(let i = 0; i < users.length; i++ ){
                     if(room.players[0] === users[i].name ) {
                         room.players[0] = users[i]
                         break;
                     }
                 }
+                // Добавить комнату в список комнат
                 rooms.push(room);
                 const roomName = room.roomName;
+                // Создать параметры адресной строки
                 const params = {roomName : roomName};
+                // Сделать редирект в комнату
                 const redirectUrl = `/room.html?${new URLSearchParams(params).toString()}`
                 res.writeHead(302, {'Location': redirectUrl});
                 res.end();
@@ -119,7 +124,7 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
-    
+    // Войти в комнату
     if(url === "/enterRoom" && req.method === "POST") {
         let body = "";
 
@@ -130,16 +135,19 @@ const server = http.createServer((req, res) => {
         req.on("end", _ => {
             try {
                 let room = JSON.parse(body)
+                // Добавить игрока в комнату
                 for(let i = 0; i < users.length; i++ ){
                     if(room.player === users[i].name ) {
                         room.player = users[i]
                         break;
                     }
                 }
-                // console.log(checkRoomAvailable(room))
+                // Проверить доступна ли комната
                 if(checkRoomAvailable(room) === true) {
                     const roomName = room.roomName;
+                    // Создать параметры адресной строки
                     const params = {roomName : roomName};
+                    // Сделать редирект в комнату
                     const redirectUrl = `/room.html?${new URLSearchParams(params).toString()}`
                     res.writeHead(302, {'Location': redirectUrl});
                     res.end();
@@ -153,6 +161,7 @@ const server = http.createServer((req, res) => {
         });
         return;
     }
+    // Конец игры
     if(url === "/gameOver" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -163,13 +172,16 @@ const server = http.createServer((req, res) => {
             try {
                 const room = JSON.parse(body);
                 const roomName = room.roomName;
+                // Удалить комнату из массива состояний комнат
                 delete roomStates[roomName];
+                // Удалить комнату из глобального массива комнат
                 for(let i = 0; i < rooms.length; i++) {
                     if(rooms[i].roomName === roomName) {
                         rooms.splice(i,1);
                         break;
                     }
                 }
+                // Сделать редирект на список комнат
                 res.writeHead(302, {'location':'/roomList.html'})
                 res.end();
                 return;
@@ -180,6 +192,7 @@ const server = http.createServer((req, res) => {
         })
         return;
     }
+    // Получить текущих игроков в комнате
     if(url === "/getPlayers" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -192,11 +205,13 @@ const server = http.createServer((req, res) => {
                 const roomName = room.roomName;
                 let players;
                 let playersTotal = [];
+                // Добавить в массив игроков, из состояния комнаты
                 rooms.forEach(room => {
                     if(room.roomName === roomName) {
                         players = room.players;
                     }
                 });
+                // Добавить игроков в ответ с соответствующими сторонами
                 for(let i = 0; i < players.length; i++) {
                     if(i == 0) {
                         playersTotal.push({name: players[i].name, side: 'X'})
@@ -216,6 +231,7 @@ const server = http.createServer((req, res) => {
         })
         return;
     }
+    // Проверка состояния игры
     if (url === "/check" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -224,22 +240,26 @@ const server = http.createServer((req, res) => {
         req.on("end", _ => {
             try {
                 const roomName = JSON.parse(body).roomName;
+                // Назначить текущего игрока - Х, если игра только началась
                 if(roomStates[roomName] === undefined) {
                     res.end(JSON.stringify({currentPlayer : 'X'}))
                     return;
                 }
+                // Обработка победы
                 if (roomStates[roomName].winner) {
                     res.end(JSON.stringify({cells: roomStates[roomName].cells, 
                         currentPlayer: roomStates[roomName].currentPlayer, 
                         winner: roomStates[roomName].winner}));
                     return;
                 }
+                // Обработка ничьи
                 if (roomStates[roomName].draw) {
                     res.end(JSON.stringify({cells: roomStates[roomName].cells, 
                         currentPlayer: roomStates[roomName].currentPlayer, 
                         draw: roomStates[roomName].draw}));
                     return;
                 }
+                // Следующий ход
                 res.end(JSON.stringify({cells: roomStates[roomName].cells, 
                                         currentPlayer: roomStates[roomName].currentPlayer}));
                 return;
@@ -251,6 +271,7 @@ const server = http.createServer((req, res) => {
         })
         return;
     }
+    // Ход игрока
     if(url === "/move" && req.method === "POST") {
         let body = "";
         req.on("data", chunk => {
@@ -260,6 +281,7 @@ const server = http.createServer((req, res) => {
             try {
                 const {index, player} = JSON.parse(body);
                 const roomName = player.roomName;
+                // Если комната только создана, заполнить клетки пустотой
                 if(!roomStates[roomName]) {
                     roomStates[roomName] = {
                         cells: new Array(9).fill(""),
@@ -273,6 +295,7 @@ const server = http.createServer((req, res) => {
                     return;
                 }
                 lastMoveIndex = index;
+                // Выигрышные комбинации
                 const winningCombinations = [
                                     [0, 1, 2], [3, 4, 5], [6, 7, 8], 
                                     [0, 3, 6], [1, 4, 7], [2, 5, 8], 
@@ -280,6 +303,7 @@ const server = http.createServer((req, res) => {
                 ]; 
                 currentState.cells[index] = player.side;
                 currentPlayer = player.side;
+                // Проверка на победу
                 for (const combo of winningCombinations) {
                     const [a, b, c] = combo;
                     if (
@@ -287,14 +311,16 @@ const server = http.createServer((req, res) => {
                         currentState.cells[a] === currentState.cells[b] &&
                         currentState.cells[a] === currentState.cells[c]
                     ) {
-                        // Оповещаем клиентов о победе и очищаем состояние игры
+                        // Добавить в массив пользователей клиенты
                         const clients = []
                         users.forEach(user => {
                             clients.push(user.client)
                         })
+                        // Определить победтиля
                         roomStates[roomName].winner = currentState.currentPlayer
+                        // Отправить клиенту оповещение о победе
                         const clientsData = clients.map(client => {
-                            return {success: true, winner: currentState.currentPlayer};
+                            return {success: true, winner: currentState.currentPlayer, cells: currentState.cells};
                         })
                         res.end(JSON.stringify(clientsData));
                         return;
@@ -307,8 +333,9 @@ const server = http.createServer((req, res) => {
                         clients.push(user.client)
                     })
                     roomStates[roomName].draw = true
+                    // Отправить клиенту оповещение о ничье
                     const clientsData = clients.map(client => {
-                        return {success: true, draw: true};
+                        return {success: true, draw: true, cells: currentState.cells};
                     })
                     res.end(JSON.stringify(clientsData));
                     return;
@@ -325,7 +352,6 @@ const server = http.createServer((req, res) => {
                     return {success: true, cells: currentState.cells, currentPlayer: currentState.currentPlayer};
                 })
                 
-                // console.log(roomName)
                 res.end(JSON.stringify(clientsData));
                 return;               
             } catch (error) {
@@ -335,29 +361,23 @@ const server = http.createServer((req, res) => {
         })
         return;
     }
+    // Получить список созданных комнат
     if (url === "/getRooms" && req.method === "GET") {
         let roomNames = [];
         rooms.forEach(room => {
-            roomNames.push(room.roomName)
+            roomNames.push({roomName: room.roomName, count: room.players.length})
         })
         // Проверяем, существует ли массив комнат
         if (roomNames.length < 1) {
-            console.log("rooms is empty now")
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({rooms: roomNames, player: users[users.length-1].name})); // Отправляем пустой массив комнат
+            // Отправляем пустой массив комнат
+            res.end(JSON.stringify({rooms: roomNames, player: users[users.length-1].name})); 
             return;
         }
-        console.log("rooms not empty now")
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({rooms: roomNames, player: users[users.length-1].name}));
         return;
     }
-    if (url === "/reset" && req.method === "HEAD") {
-        currentPlayer = 'X';
-        cells.fill("");
-        return;
-    }
-    
     res.writeHead(404);
     res.end("Not Found");
 });
@@ -367,6 +387,7 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
+// Создание пользователя
 function createUser(name, res) {
     users.push({
         name: name.name,
@@ -375,19 +396,23 @@ function createUser(name, res) {
     return {name: name, client: res}
 }
 
+// Проверка комнату на доступность
 function checkRoomAvailable(room2) {
     let foundRoom = rooms.filter(room => room.roomName == room2.roomName);
 
+    // Если такой комнаты нет в списке
     if(foundRoom[0].length == 0) {
         console.log("Room not found");
         return false;
     }
 
+    // Если в комнате уже 2 игрока
     if(foundRoom[0].players.length > 1) {
         console.log("Room is full");
         return false;
     }
     
+    // Если комната доступна войти в нее
     foundRoom[0].players.push(room2.player);
     console.log(`${room2.player} join room ${room2.roomName}`)
     return true;

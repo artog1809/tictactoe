@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Главное меню</title>
     <link rel="stylesheet" href="style.css" type="text/css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div class="container"> 
 
         <h1>Список комнат</h1>
-        
-        <div class="roomList">
 
-        </div>
         <div class="createNewRoom">
             <label for="roomName">Введите название комнаты:</label>
             <input type="text" class="roomName">
@@ -22,9 +22,9 @@
         </div>
 
         <div class="list">
-            <label for="rooms">Список доступных комнат: </label>
+            <label for="rooms">Список комнат: </label>
+            <div class="roomList"></div>
         </div>
-        <button class = "refreshList">Обновить</button>
     </div>
     
 </body>
